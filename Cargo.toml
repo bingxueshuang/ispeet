@@ -1,0 +1,10 @@
+[package]
+name = "ispeet"
+version = "0.1.0"
+edition = "2021"
+description = "Card game library for Ispeet"
+authors = ["Manojna <manojna.gopher@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/bingxueshuang/ispeet"
+
+[dependencies]
