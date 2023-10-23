@@ -8,3 +8,4 @@ license = "MIT"
 repository = "https://github.com/bingxueshuang/ispeet"
 
 [dependencies]
+thiserror = "1.0.50"

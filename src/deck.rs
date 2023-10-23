@@ -1,6 +1,9 @@
 use core::fmt;
+use std::str;
 
-#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+use thiserror::Error;
+
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 enum Suit {
     Clubs,
     Diamonds,
@@ -21,6 +24,21 @@ impl fmt::Display for Suit {
             Spades => "♠",
         };
         write!(f, "{symbol}")
+    }
+}
+
+impl str::FromStr for Suit {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use Suit::*;
+        let suit = match s.to_lowercase().as_ref() {
+            "♣" | "c" | "club" | "clubs" => Clubs,
+            "♦" | "d" | "diamond" | "diamonds" => Diamonds,
+            "♥" | "h" | "heart" | "hearts" => Hearts,
+            "♠" | "s" | "spade" | "spades" => Spades,
+            _ => Err(Error::ParseSuit(s.to_owned()))?,
+        };
+        Ok(suit)
     }
 }
 
@@ -56,6 +74,38 @@ impl fmt::Display for Rank {
         };
         write!(f, "{string}")
     }
+}
+
+impl str::FromStr for Rank {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use Rank::*;
+        let rank = match s.to_lowercase().as_ref() {
+            "1" | "one" | "a" | "ace" => Ace,
+            "2" | "two" | "d" | "deuce" => Two,
+            "3" | "three" | "trey" => Three,
+            "4" | "four" => Four,
+            "5" | "five" => Five,
+            "6" | "six" => Six,
+            "7" | "seven" => Seven,
+            "8" | "eight" => Eight,
+            "9" | "nine" => Nine,
+            "10" | "ten" | "t" => Ten,
+            "11" | "jack" | "j" => Jack,
+            "12" | "queen" | "q" => Queen,
+            "13" | "king" | "k" => King,
+            _ => Err(Error::ParseRank(s.to_owned()))?,
+        };
+        Ok(rank)
+    }
+}
+
+#[derive(Clone, Debug, Error)]
+enum Error {
+    #[error("cannot parse {0:?} into Suit")]
+    ParseSuit(String),
+    #[error("cannot parse {0:?} into Rank")]
+    ParseRank(String),
 }
 
 #[cfg(test)]
