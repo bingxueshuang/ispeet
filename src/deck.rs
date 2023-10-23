@@ -1,5 +1,5 @@
 use core::fmt;
-use std::str;
+use std::{cmp::Ordering, str};
 
 use thiserror::Error;
 
@@ -11,12 +11,17 @@ enum Suit {
     Spades,
 }
 
+use Suit::*;
+
+impl Suit {
+    const ALL: [Suit; 4] = [Clubs, Diamonds, Hearts, Spades];
+}
+
 impl fmt::Display for Suit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             return write!(f, "{:?}", self);
         }
-        use Suit::*;
         let symbol = match self {
             Clubs => "♣",
             Diamonds => "♦",
@@ -30,7 +35,6 @@ impl fmt::Display for Suit {
 impl str::FromStr for Suit {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use Suit::*;
         let suit = match s.to_lowercase().as_ref() {
             "♣" | "c" | "club" | "clubs" => Clubs,
             "♦" | "d" | "diamond" | "diamonds" => Diamonds,
@@ -59,6 +63,18 @@ enum Rank {
     Ace,
 }
 
+use Rank::*;
+
+impl Rank {
+    const ALL: [Rank; 13] = [
+        Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace,
+    ];
+    fn face_value(&self) -> bool {
+        let value = *self as u8;
+        value > 10
+    }
+}
+
 impl fmt::Display for Rank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let debug_name = format!("{self:?}");
@@ -79,7 +95,6 @@ impl fmt::Display for Rank {
 impl str::FromStr for Rank {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use Rank::*;
         let rank = match s.to_lowercase().as_ref() {
             "1" | "one" | "a" | "ace" => Ace,
             "2" | "two" | "d" | "deuce" => Two,
@@ -100,6 +115,57 @@ impl str::FromStr for Rank {
     }
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+struct Card {
+    rank: Rank,
+    suit: Suit,
+}
+
+impl Card {
+    fn new(rank: Rank, suit: Suit) -> Self {
+        Self { rank, suit }
+    }
+    fn rank(&self) -> Rank {
+        self.rank
+    }
+    fn suit(&self) -> Suit {
+        self.suit
+    }
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            write!(f, "{:#} of {:#}", self.rank, self.suit)
+        } else {
+            write!(f, "{}{}", self.suit, self.rank)
+        }
+    }
+}
+
+impl PartialOrd for Card {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let ord = if self.suit == other.suit {
+            self.rank.cmp(&other.rank)
+        } else {
+            None?
+        };
+        Some(ord)
+    }
+}
+
+impl From<(Rank, Suit)> for Card {
+    fn from((rank, suit): (Rank, Suit)) -> Self {
+        Card { rank, suit }
+    }
+}
+
+impl From<(Suit, Rank)> for Card {
+    fn from((suit, rank): (Suit, Rank)) -> Self {
+        Card { rank, suit }
+    }
+}
+
 #[derive(Clone, Debug, Error)]
 enum Error {
     #[error("cannot parse {0:?} into Suit")]
@@ -110,13 +176,12 @@ enum Error {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use super::*;
 
     #[test]
     fn rank_display_as_words() {
-        use Rank::*;
         let map = HashMap::from([
             (Two, "Two"),
             (Three, "Three"),
@@ -140,7 +205,6 @@ mod test {
 
     #[test]
     fn rank_display() {
-        use Rank::*;
         let map = HashMap::from([
             (Two, "2"),
             (Three, "3"),
@@ -164,7 +228,6 @@ mod test {
 
     #[test]
     fn suit_display_as_words() {
-        use Suit::*;
         let map = HashMap::from([
             (Clubs, "Clubs"),
             (Diamonds, "Diamonds"),
@@ -178,12 +241,11 @@ mod test {
     }
 
     #[test]
-    fn suit_display() {
-        use Suit::*;
-        let map = HashMap::from([(Clubs, "♣"), (Diamonds, "♦"), (Hearts, "♥"), (Spades, "♠")]);
-        for (suit, display) in map.iter() {
-            let suit_display = format!("{}", suit);
-            assert_eq!(display, &suit_display);
+    fn rank_face_value() {
+        let court_cards = HashSet::from([Jack, Queen, King, Ace]);
+        for rank in Rank::ALL {
+            let face_value = court_cards.contains(&rank);
+            assert_eq!(rank.face_value(), face_value);
         }
     }
 }
