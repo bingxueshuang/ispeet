@@ -1,6 +1,7 @@
 use core::fmt;
 use std::{cmp::Ordering, str};
 
+use rand::distributions::{Distribution, Standard, Uniform};
 use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
@@ -43,6 +44,14 @@ impl str::FromStr for Suit {
             _ => Err(Error::ParseSuit(s.to_owned()))?,
         };
         Ok(suit)
+    }
+}
+
+impl Distribution<Suit> for Standard {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Suit {
+        let suits = Suit::ALL;
+        let index = Uniform::new(0, suits.len()).sample(rng);
+        suits[index]
     }
 }
 
@@ -115,6 +124,14 @@ impl str::FromStr for Rank {
     }
 }
 
+impl Distribution<Rank> for Standard {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Rank {
+        let ranks = Rank::ALL;
+        let index = Uniform::new(0, ranks.len()).sample(rng);
+        ranks[index]
+    }
+}
+
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 struct Card {
     rank: Rank,
@@ -162,6 +179,14 @@ impl From<(Rank, Suit)> for Card {
 
 impl From<(Suit, Rank)> for Card {
     fn from((suit, rank): (Suit, Rank)) -> Self {
+        Card { rank, suit }
+    }
+}
+
+impl Distribution<Card> for Standard {
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Card {
+        let rank: Rank = rng.gen();
+        let suit: Suit = rng.gen();
         Card { rank, suit }
     }
 }
